@@ -1,15 +1,19 @@
-use std::{error::Error, path::PathBuf};
+use std::{collections::HashMap, error::Error, path::PathBuf};
 
 use chrono::Datelike;
 use clap::Parser;
+use errors::DayNotFoundError;
 use opts::RawOptions;
+use runner::RunnableDay;
 
 #[macro_use]
 extern crate clap;
 
+pub mod errors;
 mod opts;
+pub mod runner;
 
-pub fn init() -> Result<(), std::io::Error> {
+pub fn init(days: HashMap<u32, Box<dyn RunnableDay>>) -> Result<(), Box<dyn Error>> {
     let options = RawOptions::parse();
 
     // Create the exercise date from the specified inputs
@@ -27,9 +31,21 @@ pub fn init() -> Result<(), std::io::Error> {
     inputs_dir.push(format!("{}", year));
     inputs_dir.push(format!("day_{:0>2}.txt", day));
 
-    // Run the exercise
+    let day_executable = days.get(&day);
 
-    Ok(())
+    match day_executable {
+        Some(day_executable) => {
+            let data = day_executable.parse_input(vec![]);
+            println!("{}", day_executable.part_1(data.clone()));
+            println!("{}", day_executable.part_2(data));
+
+            Ok(())
+        }
+        None => {
+            println!("Could not find this day in the runnables");
+            Err(Box::new(DayNotFoundError))
+        }
+    }
 }
 
 fn get_inputs_dir(input_dir: Option<String>) -> Result<PathBuf, std::io::Error> {
