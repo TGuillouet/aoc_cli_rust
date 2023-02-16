@@ -4,6 +4,7 @@ use std::{
     fs::File,
     io::BufRead,
     path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use chrono::Datelike;
@@ -43,8 +44,26 @@ pub fn init(days: HashMap<u32, Box<dyn RunnableDay>>) -> Result<(), Box<dyn Erro
         Some(day_executable) => {
             let lines = read_lines(inputs_dir)?;
             let data = day_executable.parse_input(lines);
-            println!("{}", day_executable.part_1(data.clone()));
-            println!("{}", day_executable.part_2(data));
+
+            let start = SystemTime::now().duration_since(UNIX_EPOCH)?;
+            let part1 = day_executable.part_1(data.clone());
+            let end = SystemTime::now().duration_since(UNIX_EPOCH)?;
+            let time = end - start;
+            println!(
+                "Part 1: {}, executed in {} microseconds",
+                part1,
+                time.as_micros() as f64 / 1000.0
+            );
+
+            let start = SystemTime::now().duration_since(UNIX_EPOCH)?;
+            let part2 = day_executable.part_2(data);
+            let end = SystemTime::now().duration_since(UNIX_EPOCH)?;
+            let time = end - start;
+            println!(
+                "Part 2: {}, executed in {} microseconds",
+                part2,
+                time.as_micros() as f64 / 1000.0
+            );
 
             Ok(())
         }
