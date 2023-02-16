@@ -14,6 +14,38 @@ enum Orientation {
 pub struct Day01 {}
 
 impl Day01 {
+    fn traverse(&self, should_stop: bool, data: Vec<String>) -> (i32, i32) {
+        let mut visited: HashSet<(i32, i32)> = HashSet::new();
+        let mut current_orientation = Orientation::North;
+        let mut x = 0;
+        let mut y = 0;
+
+        for line in data.iter() {
+            let orientation = self.get_orientation(
+                current_orientation.clone(),
+                line.chars().nth(0).unwrap().to_string().as_str(),
+            );
+            let movement: i32 = line[1..].to_string().parse().unwrap();
+
+            for _ in 0..movement {
+                match orientation {
+                    Orientation::North => y += 1,
+                    Orientation::South => y -= 1,
+                    Orientation::East => x += 1,
+                    Orientation::West => x -= 1,
+                };
+                if should_stop && visited.contains(&(x, y)) {
+                    return (x, y);
+                }
+
+                visited.insert((x, y));
+            }
+            current_orientation = orientation;
+        }
+
+        (x, y)
+    }
+
     fn get_orientation(&self, current: Orientation, orientation_modifier: &str) -> Orientation {
         match orientation_modifier {
             "L" => {
@@ -45,86 +77,13 @@ impl Day01 {
 
 impl RunnableDay for Day01 {
     fn part_1(&self, data: Vec<String>) -> i32 {
-        let mut current_orientation = Orientation::North;
-        let mut x = 0;
-        let mut y = 0;
-
-        for line in data.iter() {
-            let orientation = self.get_orientation(
-                current_orientation.clone(),
-                line.chars().nth(0).unwrap().to_string().as_str(),
-            );
-            let movement: i32 = line[1..].to_string().parse().unwrap();
-
-            match orientation {
-                Orientation::North => y += movement,
-                Orientation::South => y -= movement,
-                Orientation::East => x += movement,
-                Orientation::West => x -= movement,
-            };
-
-            current_orientation = orientation;
-        }
-
+        let (x, y) = self.traverse(false, data);
         x.abs() + y.abs() // The real formula is |x2 - x1| + |y2 - y1| but we are omitting the (x1, y1) parts because of this point is on the coordinates (0, 0)
     }
 
     fn part_2(&self, data: Vec<String>) -> i32 {
-        let mut current_orientation = Orientation::North;
-        let mut x = 0;
-        let mut y = 0;
-
-        let mut positions: Vec<(i32, i32)> = Vec::new();
-        let mut visited: HashMap<String, (i32, i32)> = HashMap::new();
-
-        positions.push((0, 0));
-
-        for line in data.iter() {
-            let orientation = self.get_orientation(
-                current_orientation.clone(),
-                line.chars().nth(0).unwrap().to_string().as_str(),
-            );
-            let movement: i32 = line[1..].to_string().parse().unwrap();
-
-            match orientation {
-                Orientation::North => y += movement,
-                Orientation::South => y -= movement,
-                Orientation::East => x += movement,
-                Orientation::West => x -= movement,
-            };
-
-            current_orientation = orientation;
-
-            positions.push((x, y));
-        }
-
-        let mut crossing_position: Option<(i32, i32)> = None;
-        for (index, current_position) in positions.iter().enumerate() {
-            if index == positions.len() - 1 || crossing_position.is_some() {
-                break;
-            }
-
-            let end_position = positions[index + 1];
-
-            // Get all the positions between the current_position and the end_position
-            for x in current_position.0 + 1..=end_position.0 {
-                let key = format!("{},{}", x, current_position.1);
-                visited.insert(key, (x, current_position.1));
-            }
-
-            for y in current_position.1 + 1..=end_position.1 {
-                let key = format!("{},{}", current_position.0, y);
-                if visited.contains_key(&key) {
-                    crossing_position = Some((current_position.0, y));
-                    break;
-                }
-                visited.insert(key, (current_position.0, y));
-            }
-        }
-
-        let pos = crossing_position.unwrap_or_default();
-
-        pos.0.abs() - pos.1.abs()
+        let (x, y) = self.traverse(true, data);
+        x.abs() + y.abs()
     }
 
     fn parse_input(&self, lines: Vec<String>) -> Vec<String> {
