@@ -75,7 +75,9 @@ impl RunnableDay for Day01 {
         let mut y = 0;
 
         let mut positions: Vec<(i32, i32)> = Vec::new();
-        let mut visited: HashSet<(i32, i32)> = HashSet::new();
+        let mut visited: HashMap<String, (i32, i32)> = HashMap::new();
+
+        positions.push((0, 0));
 
         for line in data.iter() {
             let orientation = self.get_orientation(
@@ -98,17 +100,31 @@ impl RunnableDay for Day01 {
 
         let mut crossing_position: Option<(i32, i32)> = None;
         for (index, current_position) in positions.iter().enumerate() {
-            if index + 1 == positions.len() - 1 || crossing_position.is_some() {
-                println!("Index: {}", index);
+            if index == positions.len() - 1 || crossing_position.is_some() {
                 break;
             }
 
             let end_position = positions[index + 1];
 
             // Get all the positions between the current_position and the end_position
+            for x in current_position.0 + 1..=end_position.0 {
+                let key = format!("{},{}", x, current_position.1);
+                visited.insert(key, (x, current_position.1));
+            }
+
+            for y in current_position.1 + 1..=end_position.1 {
+                let key = format!("{},{}", current_position.0, y);
+                if visited.contains_key(&key) {
+                    crossing_position = Some((current_position.0, y));
+                    break;
+                }
+                visited.insert(key, (current_position.0, y));
+            }
         }
 
-        x.abs() - y.abs()
+        let pos = crossing_position.unwrap_or_default();
+
+        pos.0.abs() - pos.1.abs()
     }
 
     fn parse_input(&self, lines: Vec<String>) -> Vec<String> {
