@@ -1,4 +1,10 @@
-use std::{collections::HashMap, error::Error, path::PathBuf};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fs::File,
+    io::BufRead,
+    path::{Path, PathBuf},
+};
 
 use chrono::Datelike;
 use clap::Parser;
@@ -35,7 +41,8 @@ pub fn init(days: HashMap<u32, Box<dyn RunnableDay>>) -> Result<(), Box<dyn Erro
 
     match day_executable {
         Some(day_executable) => {
-            let data = day_executable.parse_input(vec![]);
+            let lines = read_lines(inputs_dir)?;
+            let data = day_executable.parse_input(lines);
             println!("{}", day_executable.part_1(data.clone()));
             println!("{}", day_executable.part_2(data));
 
@@ -46,6 +53,23 @@ pub fn init(days: HashMap<u32, Box<dyn RunnableDay>>) -> Result<(), Box<dyn Erro
             Err(Box::new(DayNotFoundError))
         }
     }
+}
+
+fn read_lines<P>(filename: P) -> std::io::Result<Vec<String>>
+where
+    P: AsRef<Path>,
+{
+    let mut lines: Vec<String> = Vec::new();
+    let file = File::open(filename)?;
+    let file_lines = std::io::BufReader::new(file).lines();
+
+    for line in file_lines {
+        if let Ok(line) = line {
+            lines.push(line);
+        }
+    }
+
+    Ok(lines)
 }
 
 fn get_inputs_dir(input_dir: Option<String>) -> Result<PathBuf, std::io::Error> {
